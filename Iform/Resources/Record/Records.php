@@ -84,25 +84,13 @@ class Records extends BaseResource implements BatchQueryMapper, BatchCommandMapp
         $elements = json_decode($elemResource->withAllFields()
                                              ->fetchAll(), true);
 
-        foreach ($elements as $element) {
-            if (! $this->notCollectedType($element['data_type'])) {
-                array_push($fields, $element['name']);
-            }
+        if (is_array($elements)) {
+            $fields = array_map(function($element){
+                return $element['name'];
+            }, $elements);
         }
 
         return implode(",", array_merge(self::$baseRecord, $fields));
-    }
-
-    /**
-     * @param $type
-     *
-     * @return bool
-     */
-    private function notCollectedType($type)
-    {
-        $doNotAdd = array(16, 17, 35, 32, 18);
-
-        return in_array($type, $doNotAdd);
     }
 
     /**
