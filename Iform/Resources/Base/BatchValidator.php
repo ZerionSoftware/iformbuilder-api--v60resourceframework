@@ -1,6 +1,6 @@
 <?php namespace Iform\Resources\Base;
 
-trait BatchValidator {
+class BatchValidator {
 
     /**
      * Combine parameters for batch calls
@@ -10,7 +10,7 @@ trait BatchValidator {
      *
      * @return array
      */
-    private function combine($passed, $current)
+    public static function combine($passed, $current)
     {
         if (empty($current)) return $passed;
 
@@ -23,7 +23,7 @@ trait BatchValidator {
      * @return array
      * @throws \Exception
      */
-    private function formatBatch($values)
+    public static function formatBatch($values)
     {
         if (isset($values[0])) {
             if (! is_array($values[0])) throw new \InvalidArgumentException("invalid batch format");

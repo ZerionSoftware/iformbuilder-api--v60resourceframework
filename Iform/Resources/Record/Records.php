@@ -11,7 +11,6 @@ use Iform\Resources\IformResource;
 
 class Records extends BaseResource implements BatchQueryMapper, BatchCommandMapper {
 
-    use BatchValidator;
     /**
      * Collection Object
      *
@@ -84,13 +83,25 @@ class Records extends BaseResource implements BatchQueryMapper, BatchCommandMapp
         $elements = json_decode($elemResource->withAllFields()
                                              ->fetchAll(), true);
 
-        if (is_array($elements)) {
-            $fields = array_map(function($element){
-                return $element['name'];
-            }, $elements);
+        foreach ($elements as $element) {
+            if (! $this->notCollectedType($element['data_type'])) {
+                array_push($fields, $element['name']);
+            }
         }
 
         return implode(",", array_merge(self::$baseRecord, $fields));
+    }
+
+    /**
+     * @param $type
+     *
+     * @return bool
+     */
+    private function notCollectedType($type)
+    {
+        $doNotAdd = array(16, 17, 35, 32, 18);
+
+        return in_array($type, $doNotAdd);
     }
 
     /**
@@ -101,9 +112,9 @@ class Records extends BaseResource implements BatchQueryMapper, BatchCommandMapp
      * @return string
      * @throws InvalidCallException
      */
-    public function fetchAll($params = [])
+    public function fetchAll($params = array())
     {
-        $this->params = $this->combine($params, $this->params);
+        $this->params = BatchValidator::combine($params, $this->params);
 
         if (empty($this->params) || ! isset($this->params['limit'])) {
             if (! $this->inEndpoint('assignments')) {
@@ -142,13 +153,13 @@ class Records extends BaseResource implements BatchQueryMapper, BatchCommandMapp
      * @return mixed
      * @throws InvalidCallException
      */
-    public function updateAll($values = [])
+    public function updateAll($values = array())
     {
         if ($this->inEndpoint('assignments')) {
             throw new InvalidCallException("record assignments cannot be updated through api");
         }
 
-        $values = $this->formatBatch($values);
+        $values = BatchValidator::formatBatch($values);
 
         return $this->gateway->update($this->collectionUrl(), $values);
     }
@@ -163,9 +174,9 @@ class Records extends BaseResource implements BatchQueryMapper, BatchCommandMapp
      *
      * @return mixed
      */
-    public function deleteAll($values = [])
+    public function deleteAll($values = array())
     {
-        $values = $this->formatBatch($values);
+        $values = BatchValidator::formatBatch($values);
 
         return $this->gateway->delete($this->collectionUrl(), $values);
     }

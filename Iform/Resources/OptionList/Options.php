@@ -2,6 +2,7 @@
 
 use Iform\Resolvers\RequestHandler;
 use Iform\Resources\Base\BaseResource;
+use Iform\Resources\Base\BatchValidator;
 use Iform\Resources\Base\FullCollection;
 use Iform\Resources\Contracts\BatchCommandMapper;
 use Iform\Resources\Contracts\BatchQueryMapper;
@@ -22,16 +23,16 @@ class Options extends BaseResource implements BatchQueryMapper, BatchCommandMapp
         $this->collection->setLimit(1000);
     }
 
-    public function updateAll($values = [])
+    public function updateAll($values = array())
     {
-        $values = $this->formatBatch($values);
+        $values = BatchValidator::formatBatch($values);
 
         return $this->gateway->update($this->collectionUrl(), $values);
     }
 
-    public function deleteAll($values = [])
+    public function deleteAll($values = array())
     {
-        $values = $this->formatBatch($values);
+        $values = BatchValidator::formatBatch($values);
 
         return $this->gateway->delete($this->collectionUrl(), $values);
     }
@@ -48,7 +49,7 @@ class Options extends BaseResource implements BatchQueryMapper, BatchCommandMapp
      *
      * @return string
      */
-    public function fetchAll($params = [])
+    public function fetchAll($params = array())
     {
         if (! empty($params)) $this->setParameters($params);
 

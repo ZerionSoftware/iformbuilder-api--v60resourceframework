@@ -8,7 +8,6 @@ use Iform\Resources\Base\BatchValidator;
 
 class OptionLists extends BaseResource implements BatchQueryMapper {
 
-    use BatchValidator;
     /**
      * Full collection object
      *
@@ -38,9 +37,9 @@ class OptionLists extends BaseResource implements BatchQueryMapper {
      *
      * @return string
      */
-    public function fetchAll($params = [])
+    public function fetchAll($params = array())
     {
-        $this->params = $this->combine($params, $this->params);
+        $this->params = BatchValidator::combine($params, $this->params);
 
         //NOTE::parameters could still be set if helper method was used before call
         return empty($this->params)

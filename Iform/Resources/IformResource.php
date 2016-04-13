@@ -29,7 +29,7 @@ class IformResource {
      * object pool
      * @var array
      */
-    private static $pool = [];
+    private static $pool = array();
     /**
      * share gateway
      */
@@ -112,3 +112,4 @@ class IformResource {
         return new Elements(static::$handler, $pageId);
     }
 }
+

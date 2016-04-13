@@ -2,13 +2,14 @@
 
 use Iform\Creds\Profile;
 use Iform\Resources\Contracts\Mapping;
+use Iform\Creds\Config;
 
 /**
  * Class BaseResource | Template for resources
  *
  * @package Iform\Resources
  */
-abstract class BaseResource implements Profile, Mapping {
+abstract class BaseResource implements Mapping {
     /**
      * Api gateway
      * @var Object
@@ -91,15 +92,9 @@ abstract class BaseResource implements Profile, Mapping {
      */
     protected function setUser($profile = null, $server = null)
     {
-        $profile = $profile ?: Profile::ID;
-        $server = $server ?: Profile::SERVER;
-
-        if (Profile::ID === "" || Profile::SERVER === "") {
-            throw new \Exception("iFormBuilder user credentials not set.  Please provide a valid profile id and server location.");
-        }
-
-        $this->urlComponents["profiles"] = $profile;
-        $this->urlComponents["server"] = $server;
+        Config::getInstance();
+        $this->urlComponents["profiles"] = Config::getUser();
+        $this->urlComponents["server"] = Config::getServer();
     }
 
     /**

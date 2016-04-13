@@ -9,7 +9,6 @@ use Iform\Resources\Base\BatchValidator;
 
 class Profile extends BaseResource implements BatchQueryMapper {
 
-    use BatchValidator;
     /**
      * Collection Object
      *
@@ -76,9 +75,9 @@ class Profile extends BaseResource implements BatchQueryMapper {
         return $this->where(implode(",", static::$baseElements));
     }
 
-    public function fetchAll($params = [])
+    public function fetchAll($params = array())
     {
-        $this->params = $this->combine($params, $this->params);
+        $this->params = BatchValidator::combine($params, $this->params);
 
         return empty($this->params) || $this->getAll
             ? $this->collection->fetchCollection($this->gateway, $this->collectionUrl(), $this->params)

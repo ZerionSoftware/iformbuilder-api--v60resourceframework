@@ -9,7 +9,6 @@ use Iform\Resources\Contracts\BatchQueryMapper;
 
 class Elements extends BaseResource implements BatchQueryMapper, BatchCommandMapper {
 
-    use BatchValidator;
     /**
      * Full Collection Object
      *
@@ -52,9 +51,9 @@ class Elements extends BaseResource implements BatchQueryMapper, BatchCommandMap
      *
      * @return mixed
      */
-    public function updateAll($values = [])
+    public function updateAll($values = array())
     {
-        $values = $this->formatBatch($values);
+        $values =  BatchValidator::formatBatch($values);
 
         return $this->gateway->update($this->collectionUrl(), $values);
     }
@@ -64,9 +63,9 @@ class Elements extends BaseResource implements BatchQueryMapper, BatchCommandMap
      *
      * @return mixed
      */
-    public function deleteAll($values = [])
+    public function deleteAll($values = array())
     {
-        $values = $this->formatBatch($values);
+        $values = BatchValidator::formatBatch($values);
 
         return $this->gateway->delete($this->collectionUrl(), $values);
     }
@@ -77,10 +76,9 @@ class Elements extends BaseResource implements BatchQueryMapper, BatchCommandMap
      *
      * @return string
      */
-    public function fetchAll($params = [])
+    public function fetchAll($params = array())
     {
-        $this->params = $this->combine($params, $this->params);
-
+        $this->params = BatchValidator::combine($params, $this->params);
         //NOTE::parameters could still be set if helper method was used before call
         return empty($this->params)
             ? $this->collection->fetchCollection($this->gateway, $this->collectionUrl())

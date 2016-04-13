@@ -9,7 +9,6 @@ use Iform\Resources\Base\FullCollection;
 
 class Users extends BaseResource implements BatchQueryMapper, BatchCommandMapper {
 
-    use BatchValidator;
     /**
      * Collection Object
      *
@@ -27,7 +26,7 @@ class Users extends BaseResource implements BatchQueryMapper, BatchCommandMapper
      */
     private static $baseLabel = array(
         "id", "username", "global_id", "first_name", "last_name",
-        "email", "created_date", "is_locked"
+        "email", "created_date", "is_locked", "roles"
     );
     /**
      * Page assignment fields
@@ -87,9 +86,9 @@ class Users extends BaseResource implements BatchQueryMapper, BatchCommandMapper
      *
      * @return mixed
      */
-    public function updateAll($values)
+    public function updateAll($values = array())
     {
-        $values = $this->formatBatch($values);
+        $values = BatchValidator::formatBatch($values);
 
         return $this->gateway->update($this->collectionUrl(), $values);
     }
@@ -101,9 +100,9 @@ class Users extends BaseResource implements BatchQueryMapper, BatchCommandMapper
      *
      * @return string
      */
-    public function fetchAll($params = [])
+    public function fetchAll($params = array())
     {
-        $this->params = $this->combine($params, $this->params);
+        $this->params = BatchValidator::combine($params, $this->params);
 
         if (empty($this->params) || ! isset($this->params['limit'])) {
             $results = $this->collection->fetchCollection($this->gateway, $this->collectionUrl(), $this->params);
@@ -121,9 +120,9 @@ class Users extends BaseResource implements BatchQueryMapper, BatchCommandMapper
      *
      * @return mixed
      */
-    public function deleteAll($values = [])
+    public function deleteAll($values = array())
     {
-        $values = $this->formatBatch($values);
+        $values = BatchValidator::formatBatch($values);
 
         return $this->gateway->delete($this->collectionUrl(), $values);
     }

@@ -10,7 +10,6 @@ use Iform\Resources\Contracts\BatchQueryMapper;
 
 class Pages extends BaseResource implements BatchQueryMapper, BatchCommandMapper {
 
-    use BatchValidator;
     /**
      * Collection Object
      *
@@ -113,29 +112,29 @@ class Pages extends BaseResource implements BatchQueryMapper, BatchCommandMapper
      *
      * @return string
      */
-    public function fetchAll($params = [])
+    public function fetchAll($params = array())
     {
-        $this->params = $this->combine($params, $this->params);
+        $this->params = BatchValidator::combine($params, $this->params);
 
         return empty($this->params) || $this->getAll
             ? $this->collection->fetchCollection($this->gateway, $this->collectionUrl(), $this->params)
             : $this->gateway->read($this->collectionUrl(), $this->params);
     }
 
-    public function deleteAll($values = [])
+    public function deleteAll($values = array())
     {
         if (! $resource = $this->isCollectionResource()) {
-            throw new InvalidCallException("Can only delete certain types of page resource collections. Please review <a href='http://docs.iformbuilder.apiary.io/#reference/page-resource/page-collection/retrieve-a-list-of-pages'>Page Collection Reference</a>");
+            throw new InvalidCallException("Can only delete certain types of page resource collections.");
         }
 
         return $this->gateway->delete($this->collectionUrl(), $values);
     }
 
-    public function updateAll($values = [])
+    public function updateAll($values = array())
     {
         $resource = $this->isCollectionResource();
         if (! $resource || $resource === 'http_callbacks' ) {
-            throw new InvalidCallException("Cannot update this type of collections. Please review <a href='http://docs.iformbuilder.apiary.io/#reference/page-resource/page-collection/retrieve-a-list-of-pages'>Page Collection Reference</a>");
+            throw new InvalidCallException("Cannot update this type of collections.");
         }
 
         return $this->gateway->update($this->collectionUrl(), $values);

@@ -28,7 +28,7 @@ class FullCollection extends BaseCollection {
      * @return string
      * @throws \Exception
      */
-    public function fetchCollection(RequestHandler $gateway, $url, $params = [], &$totalCollection = [], $offset = 0)
+    public function fetchCollection(RequestHandler $gateway, $url, $params = array(), &$totalCollection = array(), $offset = 0)
     {
         $request = $gateway->read($url, $params, true);
         $this->validate($request);
