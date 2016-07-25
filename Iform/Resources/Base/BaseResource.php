@@ -92,9 +92,15 @@ abstract class BaseResource implements Mapping {
      */
     protected function setUser($profile = null, $server = null)
     {
-        Config::getInstance();
-        $this->urlComponents["profiles"] = Config::getUser();
-        $this->urlComponents["server"] = Config::getServer();
+       $profile = $profile ?: Profile::ID;
+       $server = $server ?: Profile::SERVER;
+
+       if (Profile::ID === "" || Profile::SERVER === "") {
+           throw new \Exception("iFormBuilder user credentials not set.  Please provide a valid profile id and server location.");
+       }
+
+       $this->urlComponents["profiles"] = $profile;
+       $this->urlComponents["server"] = $server;
     }
 
     /**
