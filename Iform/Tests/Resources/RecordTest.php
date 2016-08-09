@@ -1,6 +1,7 @@
 <?php namespace Iform\Tests\Resources;
 
 use Iform\Resources\Record;
+use Iform\Resources\Base\BatchValidator;
 
 class RecordTest extends BaseResourceTest {
 
@@ -31,9 +32,9 @@ class RecordTest extends BaseResourceTest {
     public function testFetchAllWithLimitSetPasses()
     {
         $resource = $this->instantiate($this->stub);
-        $response = $resource->first(1000)->fetchAll();
+        $response = $resource->first(100)->fetchAll();
 
-        $this->assertInternalType('array', json_decode($response, true));
+        $this->assertCount(100, $response);
     }
 
     public function testUpdateAll()
@@ -70,6 +71,38 @@ class RecordTest extends BaseResourceTest {
                    ->with("/" . static::$pattern . "/", $values);
 
         $this->resource->deleteAll($values);
+    }
+
+    public function testDeletesWithGrammar()
+    {
+//        $values = [
+//            [
+//                'id' => '161259'
+//            ],
+//            [
+//                'id' => '161256'
+//            ]
+//        ];
+//
+//        $grammar = ['fields' => 'id > 1'];
+//        $test = BatchValidator::combine($values, $grammar);
+//
+//        $this->mock->shouldReceive('delete')
+//                   ->once()
+//                   ->with("/" . static::$pattern . "/", $test);
+//
+//        $this->resource->where('id > 1')->deleteAll($values);
+    }
+
+    public function testDeletesWithByGrammarWithNoParams()
+    {
+        $test = "https://ssalinasdemo.iformbuilder.com/exzact/api/v60/profiles/161521/pages/7777777/records?fields=id+%3E+1";
+
+        $this->mock->shouldReceive('delete')
+                   ->once()
+                   ->with($test, []);
+
+        $this->resource->where('id > 1')->deleteAll([]);
     }
 
     /***************************************************************

@@ -6,25 +6,9 @@ use Iform\Resources\Base\FullCollection;
 use Iform\Resources\Base\BatchValidator;
 use Iform\Resources\Contracts\BatchCommandMapper;
 use Iform\Resources\Contracts\BatchQueryMapper;
+use Iform\Resources\Base\BaseParameter;
 
 class Elements extends BaseResource implements BatchQueryMapper, BatchCommandMapper {
-
-    use BatchValidator;
-    /**
-     * Full Collection Object
-     *
-     * @var FullCollection
-     */
-    private $collection;
-    /**
-     * Base
-     *
-     * @var array
-     */
-    private static $baseElements = array('id', 'name', 'global_id', 'version', 'label', 'description', 'data_type', 'data_size', 'created_date', 'created_by', 'modified_date', 'modified_by', 'widget_type', 'sort_order', 'optionlist_id',
-        'default_value', 'low_value', 'high_value', 'dynamic_value', 'condition_value', 'client_validation', 'is_disabled', 'reference_id_1', 'reference_id_2',
-        'reference_id_3', 'reference_id_4', 'reference_id_5', 'attachment_link', 'is_readonly', 'is_required', 'validation_message', 'is_action', 'smart_tbl_search',
-        'smart_tbl_search_col', 'is_encrypt', 'is_hide_typing', 'on_change', 'keyboard_type', 'dynamic_label', 'weighted_score', 'localizations');
 
     function __construct(RequestHandler $gateway, $pageId, FullCollection $collection = null)
     {
@@ -35,6 +19,20 @@ class Elements extends BaseResource implements BatchQueryMapper, BatchCommandMap
         $this->collection = $collection ?: new FullCollection();
     }
 
+    /**
+     * @override
+     * @param array $dependencies
+     * @param null  $identifier
+     */
+    public function reset($dependencies = array(), $identifier = null)
+    {
+        if (isset($dependencies['gateway'])) {
+            $this->setGateway($dependencies['gateway']);
+        }
+        $this->setUser();
+        $this->setBaseUrl($identifier);
+    }
+
     public function localizations($elementId)
     {
         $this->activeUrl = $this->getSingleUrl($elementId) . '/localizations';
@@ -42,9 +40,9 @@ class Elements extends BaseResource implements BatchQueryMapper, BatchCommandMap
         return $this;
     }
 
-    public function withAllFields()
+    protected function getAllFields()
     {
-        return $this->where(implode(",", static::$baseElements));
+        return BaseParameter::element();
     }
 
     /**
@@ -52,9 +50,9 @@ class Elements extends BaseResource implements BatchQueryMapper, BatchCommandMap
      *
      * @return mixed
      */
-    public function updateAll($values = [])
+    public function updateAll($values = array())
     {
-        $values = $this->formatBatch($values);
+        $values = BatchValidator::formatBatch($values);
 
         return $this->gateway->update($this->collectionUrl(), $values);
     }
@@ -64,27 +62,11 @@ class Elements extends BaseResource implements BatchQueryMapper, BatchCommandMap
      *
      * @return mixed
      */
-    public function deleteAll($values = [])
+    public function deleteAll($values = array())
     {
-        $values = $this->formatBatch($values);
+        $values = BatchValidator::formatBatch($values);
 
         return $this->gateway->delete($this->collectionUrl(), $values);
-    }
-    /**
-     * Fetch a collection of pages : default is to return all
-     *
-     * @param array $params
-     *
-     * @return string
-     */
-    public function fetchAll($params = [])
-    {
-        $this->params = $this->combine($params, $this->params);
-
-        //NOTE::parameters could still be set if helper method was used before call
-        return empty($this->params)
-            ? $this->collection->fetchCollection($this->gateway, $this->collectionUrl())
-            : $this->gateway->read($this->collectionUrl(), $this->params);
     }
 
     protected function setGateway($gateway)

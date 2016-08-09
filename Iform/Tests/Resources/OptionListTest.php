@@ -15,6 +15,25 @@ class OptionListTest extends BaseResourceTest {
         parent::setUp();
     }
 
+    public function testFetchAll()
+    {
+        $resource = $this->instantiate($this->stub);
+        $response = $resource->fetchAll();
+
+        $this->assertInternalType('array', json_decode($response, true));
+    }
+
+    public function testFetchAllWithGrammar()
+    {
+//        $resource = $this->instantiate($this->liveTest());
+//        $response = $resource->withAllFields()->fetchAll();
+//        $decoded = json_decode($response, true);
+//
+//        //collection queries should be array
+//        $this->assertInternalType('array', $decoded);
+//        $this->assertCount(intval($resource->getResponseBodyCount()), $decoded);
+    }
+
     function tearDown()
     {
         parent::tearDown();

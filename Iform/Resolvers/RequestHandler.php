@@ -15,14 +15,27 @@ class RequestHandler implements Auth {
      *
      * @var string JWT
      */
-    private $token;
+    private $token = null;
+    /**
+     * Auth token issuing time
+     *
+     * @var int
+     */
+    public $issued;
+    /**
+     * Token Class
+     *
+     * @var TokenResolver
+     */
+    private $tokenResolver;
 
     /**
      * @param TokenResolver $tokenResolver
      */
     function __construct(TokenResolver $tokenResolver)
     {
-        $this->token = $tokenResolver->getToken($this);
+        $this->tokenResolver = $tokenResolver;
+        $this->setToken();
     }
 
     public function init()
@@ -62,6 +75,12 @@ class RequestHandler implements Auth {
         $this->init();
         if (! empty($header)) curl_setopt($this->ch, CURLOPT_HEADER, 1);
         if (! empty($params)) $url = $url . "?" . http_build_query($params);
+
+//        $this->baseCurl($url, function() use ($header) {
+//            if (! empty($header)) curl_setopt($this->ch, CURLOPT_HEADER, 1);
+//        });
+
+
         $this->baseCurl($url);
 
         return $this->execute($header);
@@ -85,6 +104,16 @@ class RequestHandler implements Auth {
         }
 
         return $this;
+    }
+
+
+    public function copy($url, $params = array())
+    {
+        $this->setupCopy($url);
+
+        if (! empty($params)) curl_setopt($this->ch, CURLOPT_POSTFIELDS, json_encode($params));
+
+        return $this->execute();
     }
 
     /**
@@ -188,6 +217,23 @@ class RequestHandler implements Auth {
     {
         if (gettype($this->ch) == 'resource') curl_close($this->ch);
     }
+
+    private function loadToken()
+    {
+        //59 minutes
+        if ($this->issued + 5940 < time()) {
+            $this->setToken();
+        }
+
+        return $this->token;
+    }
+
+    private function setToken()
+    {
+        $this->token = $this->tokenResolver->getToken($this);
+        $this->issued = time();
+    }
+
     /**
      * @param $url
      */
@@ -212,6 +258,16 @@ class RequestHandler implements Auth {
     /**
      * @param $url
      */
+    private function setupCopy($url)
+    {
+        $this->init();
+        curl_setopt($this->ch, CURLOPT_CUSTOMREQUEST, 'COPY');
+        $this->baseCurl($url);
+    }
+
+    /**
+     * @param $url
+     */
     private function setupCreate($url)
     {
         $this->init();
@@ -220,14 +276,27 @@ class RequestHandler implements Auth {
     }
 
     /**
-     * @param $url
+     * @param          $url
+     * @param callable $setupOperation
      */
-    private function baseCurl($url)
+    private function baseCurl($url, Callable $setupOperation = null)
     {
+//        $this->init();
+
+        if (! is_null($setupOperation)) $setupOperation();
+
         curl_setopt($this->ch, CURLOPT_URL, $url);
         curl_setopt($this->ch, CURLOPT_RETURNTRANSFER, 1);
-        curl_setopt($this->ch, CURLOPT_HTTPHEADER, array(
-            'Authorization: Bearer ' . $this->token,
-        ));
+
+        $this->authorizeCall();
+    }
+
+    private function authorizeCall()
+    {
+        if (! is_null($this->token)) {
+            curl_setopt($this->ch, CURLOPT_HTTPHEADER, array(
+                'Authorization: Bearer ' . $this->loadToken(),
+            ));
+        }
     }
 }

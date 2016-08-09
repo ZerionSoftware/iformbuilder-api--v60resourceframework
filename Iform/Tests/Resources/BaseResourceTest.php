@@ -1,8 +1,17 @@
 <?php namespace Iform\Tests\Resources;
 
+/**
+ * live api testing
+ */
+use Iform\Resolvers\RequestHandler;
+use Iform\Resolvers\TokenResolver;
+/**
+ * mock api
+ */
 use \Mockery as m;
 use Iform\Tests\Mocks\RequestHandlerStub;
 use Iform\Tests\Mocks\TokenResolverStub;
+use Iform\Creds\Config;
 
 /**
  * Class BaseResourceTest
@@ -47,14 +56,37 @@ class BaseResourceTest extends \PHPUnit_Framework_TestCase {
      * @var int
      */
     protected static $id = 0;
+    /**
+     * setup done
+     * @var bool
+     */
+    protected $configured;
 
     function setUp()
     {
+        if (! $this->configured) $this->doConfig();
+
         $this->mock = m::mock('Iform\Resolvers\RequestHandler');
         $this->stub = new RequestHandlerStub(new TokenResolverStub());
 
         //most resources wll be testing commands - setup mock
         $this->resource = $this->instantiate($this->mock);
+    }
+
+    function doConfig()
+    {
+        $api = 'https://ssalinasdemo.iformbuilder.com/';
+        $profileId = '161521';
+        $username = 'ssalinas';
+        $password = 'letmeinNow';
+
+        Config::getInstance();
+        Config::setUser($profileId);
+        Config::setUsername($username);
+        Config::setPassword($password);
+        Config::setServer($api);
+
+        $this->configured = true;
     }
 
     function setResourceType($resource)
@@ -107,6 +139,20 @@ class BaseResourceTest extends \PHPUnit_Framework_TestCase {
                    ->with("/" . $pattern . "/");
 
         $this->resource->delete($id);
+    }
+
+    function testCopyCommand()
+    {
+        $id = 123123;
+        $this->mock->shouldReceive('copy')
+                   ->once();
+
+        $this->resource->copy($id);
+    }
+
+    protected function liveTest()
+    {
+        return new RequestHandler(new TokenResolver());
     }
 
     protected function instantiate($dependencies)

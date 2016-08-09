@@ -2,25 +2,14 @@
 
 use Iform\Resolvers\RequestHandler;
 use Iform\Resources\Base\BaseResource;
+use Iform\Resources\Base\BaseParameter;
 use Iform\Resources\Base\FullCollection;
 use Iform\Exceptions\InvalidCallException;
-use Iform\Resources\Base\BatchValidator;
 use Iform\Resources\Contracts\BatchCommandMapper;
-use Iform\Resources\Contracts\BatchQueryMapper;
 
-class Pages extends BaseResource implements BatchQueryMapper, BatchCommandMapper {
+class Pages extends BaseResource implements BatchCommandMapper {
 
-    use BatchValidator;
-    /**
-     * Collection Object
-     *
-     * @var FullCollection
-     */
-    private $collection;
     private $getAll = false;
-    private static $baseElements = array("id", "name", "permissions", "global_id", "label", "description", "version", "created_date",
-        "created_by", "modified_date", "modified_by", "is_disabled", "reference_id_1", "reference_id_2", "reference_id_3",
-        "reference_id_4", "reference_id_5", "icon", "sort_order", "page_javascript", "label_icons", "localizations");
 
     function __construct(RequestHandler $gateway, FullCollection $collection = null)
     {
@@ -29,6 +18,22 @@ class Pages extends BaseResource implements BatchQueryMapper, BatchCommandMapper
         $this->setBaseUrl($this->urlComponents['profiles']);
 
         $this->collection = $collection ?: new FullCollection();
+    }
+
+    /**
+     * @override
+     * @param array $dependencies
+     * @param null  $identifier
+     */
+    public function reset($dependencies = array(), $identifier = null)
+    {
+        if (isset($dependencies['gateway'])) {
+            $this->setGateway($dependencies['gateway']);
+        }
+
+        $this->params = array();
+        $this->setUser();
+        $this->setBaseUrl($this->urlComponents['profiles']);
     }
 
     protected function setGateway($gateway)
@@ -95,47 +100,31 @@ class Pages extends BaseResource implements BatchQueryMapper, BatchCommandMapper
     }
 
     /**
-     * Query api for all resource fields
+     * Return base parameters
      *
-     * @return $this
+     * @return array
      */
-    public function withAllFields()
+    public function getAllFields()
     {
         $this->getAll = true;
 
-        return $this->where(implode(",", static::$baseElements));
+        return BaseParameter::page();
     }
 
-    /**
-     * Fetch a collection of pages : default is to return all
-     *
-     * @param array $params
-     *
-     * @return string
-     */
-    public function fetchAll($params = [])
-    {
-        $this->params = $this->combine($params, $this->params);
-
-        return empty($this->params) || $this->getAll
-            ? $this->collection->fetchCollection($this->gateway, $this->collectionUrl(), $this->params)
-            : $this->gateway->read($this->collectionUrl(), $this->params);
-    }
-
-    public function deleteAll($values = [])
+    public function deleteAll($values = array())
     {
         if (! $resource = $this->isCollectionResource()) {
-            throw new InvalidCallException("Can only delete certain types of page resource collections. Please review <a href='http://docs.iformbuilder.apiary.io/#reference/page-resource/page-collection/retrieve-a-list-of-pages'>Page Collection Reference</a>");
+            throw new InvalidCallException("Can only delete certain types of page resource collections.");
         }
 
         return $this->gateway->delete($this->collectionUrl(), $values);
     }
 
-    public function updateAll($values = [])
+    public function updateAll($values = array())
     {
         $resource = $this->isCollectionResource();
         if (! $resource || $resource === 'http_callbacks' ) {
-            throw new InvalidCallException("Cannot update this type of collections. Please review <a href='http://docs.iformbuilder.apiary.io/#reference/page-resource/page-collection/retrieve-a-list-of-pages'>Page Collection Reference</a>");
+            throw new InvalidCallException("Cannot update this type of collections.");
         }
 
         return $this->gateway->update($this->collectionUrl(), $values);

@@ -3,6 +3,7 @@
 use Iform\Resolvers\RequestHandler;
 use Iform\Creds\Auth;
 use Iform\Resolvers\Jwt;
+use Iform\Creds\Config;
 
 /**
  * @category Authentication
@@ -12,6 +13,8 @@ use Iform\Resolvers\Jwt;
  */
 class TokenResolver implements Auth {
 
+    const OAUTH2_JWT_FLOW      = 0;
+    const OAUTH2_PASSWORD_FLOW = 1;
     /**
      * This value has a maximum of 10 minutes
      *
@@ -36,13 +39,41 @@ class TokenResolver implements Auth {
      * @var string
      */
     private static $endpoint;
+    /**
+     * password flow pw
+     * @var
+     */
+    private static $password;
+    /**
+     * password flow username
+     * @var
+     */
+    private static $username;
+    /**
+     * set auth mode
+     * @var
+     */
+    private $mode;
 
     /**
-     *
+     * @param null $jwt
      */
-    function __construct()
+    function __construct($jwt = null)
     {
-        $this->setCredentials(Auth::CLIENT, Auth::SECRET, Auth::OAUTH);
+        Config::getInstance();
+        $this->setCredentials(Auth::CLIENT, Auth::SECRET, Config::getOauth());
+        $this->setFlow($jwt);
+    }
+
+    private function setFlow($jwt)
+    {
+        if (is_null($jwt)) {
+            $this->mode = self::OAUTH2_PASSWORD_FLOW;
+            self::$password = Config::getPassword();
+            self::$username = Config::getUsername();
+        } else {
+            $this->mode = self::OAUTH2_JWT_FLOW;
+        }
     }
 
     public function setCredentials($client, $secret, $endpoint)
@@ -51,6 +82,7 @@ class TokenResolver implements Auth {
         self::$secret = $secret;
         self::$endpoint = $endpoint;
     }
+
     /**
      * @param string $client_key
      * @param string $client_secret
@@ -74,6 +106,7 @@ class TokenResolver implements Auth {
     {
         return JWT::encode($payload, $client_secret);
     }
+
     /**
      * api OAuth endpoint
      *
@@ -105,8 +138,23 @@ class TokenResolver implements Auth {
      */
     private function getParams()
     {
+        return ($this->mode == self::OAUTH2_PASSWORD_FLOW) ? $this->passwordFlowParameters() : $this->jwtFlowParameters();
+    }
+
+    private function jwtFlowParameters()
+    {
         return array("grant_type" => "urn:ietf:params:oauth:grant-type:jwt-bearer",
                      "assertion"  => $this->encodeAssertion(self::$client, self::$secret));
+    }
+
+    private function passwordFlowParameters()
+    {
+        return array(
+            "grant_type"    => "password",
+            "client_id"     => static::$client,
+            "client_secret" => static::$secret,
+            "username"      => static::$username,
+            "password"      => static::$password);
     }
 
     /**

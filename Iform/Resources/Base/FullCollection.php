@@ -17,6 +17,11 @@ class FullCollection extends BaseCollection {
      * @var bool
      */
     private static $total = false;
+    /**
+     * Send total in response
+     * @var boolean
+     */
+    private static $header = false;
 
     /**
      * @param RequestHandler $gateway
@@ -28,17 +33,17 @@ class FullCollection extends BaseCollection {
      * @return string
      * @throws \Exception
      */
-    public function fetchCollection(RequestHandler $gateway, $url, $params = [], &$totalCollection = [], $offset = 0)
+    public function fetchCollection(RequestHandler $gateway, $url, $params = array(), &$totalCollection = array(), $offset = 0)
     {
         $request = $gateway->read($url, $params, true);
         $this->validate($request);
 
         $body = $this->decode($request['body'], true);
         $responseSize = count($body);
-        $totalCollection = array_merge($body, $totalCollection);
+        $totalCollection = array_merge($totalCollection, $body);
 
+        if (! static::$total) static::$total = $this->getTotalDataCount($request);
         if ($responseSize > 0) {  //stop execution if error or empty response
-            if (! static::$total) static::$total = $this->getTotalDataCount($request);
             if (static::$total > $responseSize) {
                 $offset += static::$limit;
                 $params['offset'] = $offset;
@@ -53,6 +58,60 @@ class FullCollection extends BaseCollection {
     }
 
     /**
+     * @param RequestHandler $gateway
+     * @param                $url
+     * @param array          $params
+     *
+     * @return string
+     * @throws \Exception
+     */
+    public function fetchLastInCollection(RequestHandler $gateway, $url, $params = array())
+    {
+        $request = $gateway->read($url, $params, true);
+        $this->validate($request);
+
+        $body = $this->decode($request['body'], true);
+        $responseSize = count($body);
+
+        if (! static::$total) static::$total = $this->getTotalDataCount($request);
+        if ($responseSize > 0) {  //stop execution if error or empty response
+            if (static::$total > $responseSize) {
+                $params['offset'] = static::$total - $params['offset'];
+                $this->reset();
+
+                return $gateway->read($url, $params);
+            }
+        }
+
+        $this->reset();
+
+        return $this->encode($body);
+    }
+
+    /**
+     * @param RequestHandler $gateway
+     * @param                $url
+     * @param array          $params
+     *
+     * @return string
+     * @throws \Exception
+     */
+    public function fetchIncrement(RequestHandler $gateway, $url, $params = array())
+    {
+        if (! isset($params['offset'])) {
+            throw new \InvalidArgumentException("missing offset value");
+        }
+
+        $request = $gateway->read($url, $params, true);
+        $this->validate($request);
+
+        static::$total = $this->getTotalDataCount($request);
+        $this->reset();
+
+        return $request['body'];
+    }
+
+    /**
      * Set limit - example: record limit can reach 1000
      *
      * @param $limit
@@ -60,6 +119,11 @@ class FullCollection extends BaseCollection {
     public function setLimit($limit)
     {
         static::$limit = $limit;
+    }
+
+    public function getCountFromHeader()
+    {
+        return static::$header;
     }
 
     /**
@@ -85,6 +149,8 @@ class FullCollection extends BaseCollection {
      */
     private function reset()
     {
+        static::$header = static::$total;
+        static::$limit = 100;
         static::$total = false;
     }
 }

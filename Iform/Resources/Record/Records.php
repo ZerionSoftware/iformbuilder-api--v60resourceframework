@@ -11,13 +11,6 @@ use Iform\Resources\IformResource;
 
 class Records extends BaseResource implements BatchQueryMapper, BatchCommandMapper {
 
-    use BatchValidator;
-    /**
-     * Collection Object
-     *
-     * @var FullCollection
-     */
-    private $collection;
     private static $baseRecord = array(
         'parent_record_id',
         'parent_page_id',
@@ -40,6 +33,25 @@ class Records extends BaseResource implements BatchQueryMapper, BatchCommandMapp
 
         $this->pageId = $pageId;
         $this->collection = $collection ?: new FullCollection();
+    }
+
+    /**
+     * @override
+     *
+     * @param array $dependencies
+     * @param null  $identifier
+     */
+    public function reset($dependencies = array(), $identifier = null)
+    {
+        if (isset($dependencies['gateway'])) {
+            $this->setGateway($dependencies['gateway']);
+        }
+
+        $this->pageId = $identifier;
+        $this->params = array();
+
+        $this->setUser();
+        $this->setBaseUrl($identifier);
     }
 
     /**
@@ -67,17 +79,12 @@ class Records extends BaseResource implements BatchQueryMapper, BatchCommandMapp
         $this->gateway = $gateway;
     }
 
-    public function withAllFields()
-    {
-        return $this->where($this->findAllElementFields());
-    }
-
     /**
      * Fetch element and filter fields for record
      *
      * @return string
      */
-    private function findAllElementFields()
+    protected function getAllFields()
     {
         $fields = array();
         $elemResource = IformResource::elements($this->pageId);
@@ -108,25 +115,37 @@ class Records extends BaseResource implements BatchQueryMapper, BatchCommandMapp
     /**
      * Do not fetch a large data set in memory to avoid exhaustion
      * Recommended: fetch each collection (1000 rows) and process
+     *
      * @param array $params
      *
      * @return string
      * @throws InvalidCallException
      */
-    public function fetchAll($params = [])
+    public function fetchAll($params = array())
     {
-        $this->params = $this->combine($params, $this->params);
+        $this->validateFetchRequest();
+        $this->params = BatchValidator::combine($params, $this->params);
 
-        if (empty($this->params) || ! isset($this->params['limit'])) {
-            if (! $this->inEndpoint('assignments')) {
-                throw new InvalidCallException("Record collection limit must be set");
-            }
-            $results = $this->collection->fetchCollection($this->gateway, $this->collectionUrl(), $this->params);
-        } else {
+        if ($this->isFiltered()) {
             $results = $this->gateway->read($this->collectionUrl(), $this->params);
+        } elseif ($this->getLast) {
+            $results = $this->collection->fetchLastInCollection($this->gateway, $this->collectionUrl(), $this->params);
+            $this->getLast = false;
+        } elseif ($this->getIncrement) {
+            $results = $this->collection->fetchIncrement($this->gateway, $this->collectionUrl(), $this->params);
+            $this->getIncrement = false;
+        } else {
+            $results = $this->collection->fetchCollection($this->gateway, $this->collectionUrl(), $this->params);
         }
 
         return $results;
+    }
+
+    private function validateFetchRequest()
+    {
+        if (! isset($this->params['limit']) && ! $this->inEndpoint('assignments')) {
+            throw new InvalidCallException("Record collection limit must be set");
+        }
     }
 
     /**
@@ -154,20 +173,15 @@ class Records extends BaseResource implements BatchQueryMapper, BatchCommandMapp
      * @return mixed
      * @throws InvalidCallException
      */
-    public function updateAll($values = [])
+    public function updateAll($values = array())
     {
         if ($this->inEndpoint('assignments')) {
             throw new InvalidCallException("record assignments cannot be updated through api");
         }
 
-        $values = $this->formatBatch($values);
+        list($url, $values) = $this->getFormattedBatchParams($values);
 
-        return $this->gateway->update($this->collectionUrl(), $values);
-    }
-
-    private function inEndpoint($part)
-    {
-        return strpos($this->activeUrl, $part) !== false;
+        return $this->gateway->update($url, $values);
     }
 
     /**
@@ -175,11 +189,11 @@ class Records extends BaseResource implements BatchQueryMapper, BatchCommandMapp
      *
      * @return mixed
      */
-    public function deleteAll($values = [])
+    public function deleteAll($values = array())
     {
-        $values = $this->formatBatch($values);
+        list($url, $values) = $this->getFormattedBatchParams($values);
 
-        return $this->gateway->delete($this->collectionUrl(), $values);
+        return $this->gateway->delete($url, $values);
     }
 
     public function assignments($recordId)

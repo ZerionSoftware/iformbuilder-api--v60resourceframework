@@ -3,6 +3,10 @@
 use Iform\Tests\Mocks\RequestHandlerStub;
 use Iform\Tests\Mocks\TokenResolverStub;
 use Iform\Resources\Base\FullCollection;
+use Iform\Resources\Element\Elements;
+use Iform\Resolvers\RequestHandler;
+use Iform\Resolvers\TokenResolver;
+
 
 class FullCollectionTest extends \PHPUnit_Framework_TestCase {
 
@@ -15,7 +19,7 @@ class FullCollectionTest extends \PHPUnit_Framework_TestCase {
         $this->stub = new RequestHandlerStub(new TokenResolverStub());
     }
 
-    public function testFetchCollection()
+    public function testFetchFullCollection()
     {
         $response = $this->instance->fetchCollection($this->stub, "iformbuilder.com");
 
@@ -28,6 +32,23 @@ class FullCollectionTest extends \PHPUnit_Framework_TestCase {
     public function testFetchCollectionValidates()
     {
         $this->instance->fetchCollection($this->stub, "");
+    }
+
+    public function testRetrievesLastItems()
+    {
+        $url = SERVER . PROFILE . '/pages/' . PAGE . '/elements';
+        $response = $this->instance->fetchLastInCollection($this->stub, $url, array('offset' => 10));
+
+        $test = array_diff(range(990, 1000), $response);
+        $this->assertEmpty($test);
+    }
+
+    public function testRetrievesFirstItems()
+    {
+        $url = SERVER . PROFILE . '/pages/' . PAGE . '/elements';
+        $response = $this->instance->fetchIncrement($this->stub, $url, array('offset' => 900));
+
+        $this->assertEquals(json_decode($response, true), range(900, 1000));
     }
 
     function tearDown()

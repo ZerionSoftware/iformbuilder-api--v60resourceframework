@@ -3,19 +3,11 @@
 use Iform\Resolvers\RequestHandler;
 use Iform\Resources\Base\BaseResource;
 use Iform\Resources\Contracts\BatchCommandMapper;
-use Iform\Resources\Contracts\BatchQueryMapper;
 use Iform\Resources\Base\BatchValidator;
 use Iform\Resources\Base\FullCollection;
 
-class Users extends BaseResource implements BatchQueryMapper, BatchCommandMapper {
+class Users extends BaseResource implements BatchCommandMapper {
 
-    use BatchValidator;
-    /**
-     * Collection Object
-     *
-     * @var FullCollection
-     */
-    private $collection;
     /**
      * User wants full collection
      * @var bool
@@ -27,14 +19,20 @@ class Users extends BaseResource implements BatchQueryMapper, BatchCommandMapper
      */
     private static $baseLabel = array(
         "id", "username", "global_id", "first_name", "last_name",
-        "email", "created_date", "is_locked"
+        "email", "created_date", "is_locked", "roles"
     );
     /**
      * Page assignment fields
      * @var array
      */
     private static $basePage = array('can_collect', 'can_view');
+    /**
+     * Base Record
+     *
+     * @var array
+     */
     private static $baseRecord = array("id","page_id","record_id");
+
     function __construct(RequestHandler $gateway, FullCollection $collection = null)
     {
         $this->setUser();
@@ -42,6 +40,20 @@ class Users extends BaseResource implements BatchQueryMapper, BatchCommandMapper
         $this->setBaseUrl($this->urlComponents['profiles']);
 
         $this->collection = $collection ?: new FullCollection();
+    }
+
+    /**
+     * @override
+     * @param array $dependencies
+     * @param null  $identifier
+     */
+    public function reset($dependencies = array(), $identifier = null)
+    {
+        if (isset($dependencies['gateway'])) {
+            $this->setGateway($dependencies['gateway']);
+        }
+        $this->setUser();
+        $this->setBaseUrl($this->urlComponents['profiles']);
     }
 
     public function pageAssignment($userId)
@@ -58,12 +70,7 @@ class Users extends BaseResource implements BatchQueryMapper, BatchCommandMapper
         return $this;
     }
 
-    /**
-     * Helper to set all fields for list call
-     *
-     * @return mixed
-     */
-    public function withAllFields()
+    public function getAllFields()
     {
         $this->getAll = true;
         $labels = "";
@@ -77,7 +84,7 @@ class Users extends BaseResource implements BatchQueryMapper, BatchCommandMapper
             $labels = static::$baseLabel;
         }
 
-        return $this->where(implode(",", $labels));
+        return $labels;
     }
 
     /**
@@ -87,31 +94,11 @@ class Users extends BaseResource implements BatchQueryMapper, BatchCommandMapper
      *
      * @return mixed
      */
-    public function updateAll($values)
+    public function updateAll($values = array())
     {
-        $values = $this->formatBatch($values);
+        $values = BatchValidator::formatBatch($values);
 
         return $this->gateway->update($this->collectionUrl(), $values);
-    }
-
-    /**
-     * Fetch list
-     *
-     * @param array $params
-     *
-     * @return string
-     */
-    public function fetchAll($params = [])
-    {
-        $this->params = $this->combine($params, $this->params);
-
-        if (empty($this->params) || ! isset($this->params['limit'])) {
-            $results = $this->collection->fetchCollection($this->gateway, $this->collectionUrl(), $this->params);
-        } else {
-            $results = $this->gateway->read($this->collectionUrl(), $this->params);
-        }
-
-        return $results;
     }
 
     /**
@@ -121,9 +108,9 @@ class Users extends BaseResource implements BatchQueryMapper, BatchCommandMapper
      *
      * @return mixed
      */
-    public function deleteAll($values = [])
+    public function deleteAll($values = array())
     {
-        $values = $this->formatBatch($values);
+        $values = BatchValidator::formatBatch($values);
 
         return $this->gateway->delete($this->collectionUrl(), $values);
     }

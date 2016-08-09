@@ -1,26 +1,12 @@
 <?php namespace Iform\Resources\OptionList;
 
 use Iform\Resolvers\RequestHandler;
+use Iform\Resources\Base\BaseParameter;
 use Iform\Resources\Base\BaseResource;
 use Iform\Resources\Base\FullCollection;
-use Iform\Resources\Contracts\BatchQueryMapper;
 use Iform\Resources\Base\BatchValidator;
 
-class OptionLists extends BaseResource implements BatchQueryMapper {
-
-    use BatchValidator;
-    /**
-     * Full collection object
-     *
-     * @var FullCollection
-     */
-    private $collection;
-    /**
-     * Base
-     *
-     * @var array
-     */
-    private static $baseElements = array("id", "name", "global_id", "version", "created_date", "created_by", "modified_date", "modified_by", "reference_id", "option_icons");
+class OptionLists extends BaseResource {
 
     function __construct(RequestHandler $gateway, FullCollection $collection = null)
     {
@@ -32,25 +18,22 @@ class OptionLists extends BaseResource implements BatchQueryMapper {
     }
 
     /**
-     * Fetch a collection of pages : default is to return all
-     *
-     * @param array $params
-     *
-     * @return string
+     * @override
+     * @param array $dependencies
+     * @param null  $identifier
      */
-    public function fetchAll($params = [])
+    public function reset($dependencies = array(), $identifier = null)
     {
-        $this->params = $this->combine($params, $this->params);
-
-        //NOTE::parameters could still be set if helper method was used before call
-        return empty($this->params)
-            ? $this->collection->fetchCollection($this->gateway, $this->collectionUrl())
-            : $this->gateway->read($this->collectionUrl(), $this->params);
+        if (isset($dependencies['gateway'])) {
+            $this->setGateway($dependencies['gateway']);
+        }
+        $this->setUser();
+        $this->setBaseUrl($this->urlComponents['profiles']);
     }
 
-    public function withAllFields()
+    protected function getAllFields()
     {
-        return $this->where(implode(",", static::$baseElements));
+        return BaseParameter::optionList();
     }
     /**
      * Set base url
