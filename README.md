@@ -116,8 +116,8 @@ $pageResource->assignments($pageId)->fetchAll();
 ```
 
 Full client example:
-```
-<?php
+```php
+
 // make sure to include zerion autoloader
 require_once 'iform/zerion_autoload.php';
 
