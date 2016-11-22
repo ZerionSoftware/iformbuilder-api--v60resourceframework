@@ -58,10 +58,11 @@ class TokenResolver implements Auth {
     /**
      * @param null $jwt
      */
-    function __construct($jwt = null)
+    function __construct($jwt = true)
     {
         Config::getInstance();
-        $this->setCredentials(Auth::CLIENT, Auth::SECRET, Config::getOauth());
+
+        $this->setCredentials(Config::getClient(), Config::getSecret(), Config::getOauth());
         $this->setFlow($jwt);
     }
 

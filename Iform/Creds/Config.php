@@ -29,6 +29,16 @@ class Config {
      * @var
      */
     private static $pw;
+    /**
+     * optional workflow for jwt
+     * @var
+     */
+    private static $client;
+    /**
+     * optional workflow for jwt
+     * @var
+     */
+    private static $secret;
 
     /**
      * Setter
@@ -109,6 +119,26 @@ class Config {
     }
 
     /**
+     * Getter
+     *
+     * @return mixed
+     */
+    public static function getClient()
+    {
+        return self::$client;
+    }
+
+    /**
+     * Getter
+     *
+     * @return mixed
+     */
+    public static function getSecret()
+    {
+        return self::$secret;
+    }
+
+    /**
      * Oauth Getter
      *
      * @return string
@@ -128,6 +158,31 @@ class Config {
         if (static::$instance === null) {
             static::$instance = new static();
         }
+    }
+
+    /**
+     * api setup wrapper
+     * @param $config
+     */
+    public static function api($config)
+    {
+        static::getInstance();
+
+        if (isset($config['profile'])) static::setUser($config['profile']);
+        if (isset($config['server'])) static::setServer( static::zerionEndpoint($config['server']));
+        if (isset($config['client'])) static::$client = $config['client'];
+        if (isset($config['secret'])) static::$secret  = $config['secret'];
+    }
+
+    /**
+     * Builder zerion endpoint
+     * @param $serverName
+     *
+     * @return string
+     */
+    protected static function zerionEndpoint($serverName)
+    {
+        return "https://" .$serverName .".iformbuilder.com/";
     }
 
     /**

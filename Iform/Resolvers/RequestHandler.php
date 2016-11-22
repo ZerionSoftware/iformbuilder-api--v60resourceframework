@@ -221,7 +221,7 @@ class RequestHandler implements Auth {
     private function loadToken()
     {
         //59 minutes
-        if ($this->issued + 5940 < time()) {
+        if ($this->issued + 3500 < time()) {
             $this->setToken();
         }
 
