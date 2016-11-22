@@ -7,38 +7,21 @@ PHP library to interact with iFormBuilder api v60 resources
 
 ## Getting Started
 
-Add credentials to Auth interfaces
-
-[Auth.php](https://github.com/ZerionSoftware/iFormBuilderAPI-v60/blob/zerion/Iform/Creds/Auth.php)
-```php
-interface Auth {
-    /**
-     * client key
-     */
-    CONST CLIENT = "";
-    /**
-     * secret key
-     */
-    CONST SECRET = "";
-    /**
-     * Oauth endpoint
-     */
-    CONST OAUTH = "https://yourserver.iformbuilder.com/exzact/api/oauth/token";
-}
-```
-[Profile.php](https://github.com/ZerionSoftware/iFormBuilderAPI-v60/blob/zerion/Iform/Creds/Profile.php)
+Pass config array to api method.  Must set credentials before trying to instantiate resource class.
 
 ```php
-interface Profile {
-    /**
-     * client id : profile id assigned in api apps
-     */
-    CONST ID = "111111";
-    /**
-     * server :  "https://YOURCOMPANYSERVER.iformbuilder.com/"
-     */
-    CONST SERVER = "https://server.iformbuilder.com/";
-}
+use Iform\Creds\Config;
+
+// find this credentials in the api apps section of iformbuilder admin tool
+$config = array(
+    'profile' => 'your profile id',
+    'server' => 'your server name',
+    'client' => 'your client key',
+    'secret' => 'your secret key'
+);
+
+Config::api($config);
+
 ```
 
 ## Usage
@@ -75,7 +58,7 @@ $optionsResource = IformResource::options($optionListId);
 single resource methods
 ```php
 use Iform\Resources\IformResource;
-$pageResource = IformResource::page()
+$pageResource = IformResource::pages()
 
 //single page
 $pageId = 123123;
